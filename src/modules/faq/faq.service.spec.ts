@@ -3,23 +3,12 @@ import { FaqService } from './faq.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { FaqEntity } from './entities/faq.entity';
 import { Repository } from 'typeorm';
-
-/**
- * L0 FAQ Service Unit Tests
- * Author: Quinn (QA Automation Lead)
- * PRD Reference: PRD-001 - L0 Static Query Engine
- *
- * Test Coverage:
- * - TC-001: Exact match returns confidence 1.0
- * - TC-002: Fuzzy match returns partial confidence
- * - TC-003: No match returns null (route to L1)
- * - TC-004: Category filtering works correctly
- * - TC-005: CRUD operations for admin
- */
+import { EmbeddingsService } from './embeddings.service';
 
 describe('FaqService', () => {
   let service: FaqService;
   let repository: jest.Mocked<Repository<FaqEntity>>;
+  let embeddingsService: jest.Mocked<EmbeddingsService>;
 
   const mockFaq: FaqEntity = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -30,8 +19,19 @@ describe('FaqService', () => {
     tags: ['password', 'security'],
     priority: 10,
     isActive: true,
+    embedding: [0.1, 0.2, 0.3],
     createdAt: new Date(),
     updatedAt: new Date(),
+  };
+
+  const mockQueryBuilder = {
+    select: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    setParameter: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    limit: jest.fn().mockReturnThis(),
+    getRawOne: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -41,6 +41,11 @@ describe('FaqService', () => {
       create: jest.fn(),
       save: jest.fn(),
       remove: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
+    };
+
+    const mockEmbeddingsService = {
+      generateEmbedding: jest.fn().mockResolvedValue([0.1, 0.2, 0.3]),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -50,11 +55,18 @@ describe('FaqService', () => {
           provide: getRepositoryToken(FaqEntity),
           useValue: mockRepository,
         },
+        {
+          provide: EmbeddingsService,
+          useValue: mockEmbeddingsService,
+        },
       ],
     }).compile();
 
     service = module.get<FaqService>(FaqService);
     repository = module.get(getRepositoryToken(FaqEntity));
+    embeddingsService = module.get(EmbeddingsService);
+
+    mockQueryBuilder.getRawOne.mockResolvedValue(null);
   });
 
   describe('query()', () => {
@@ -110,6 +122,34 @@ describe('FaqService', () => {
           }),
         }),
       );
+    });
+
+    it('TC-010: should return semantic match when no exact/fuzzy match', async () => {
+      // Setup no exact/fuzzy match
+      repository.findOne.mockResolvedValue(null);
+      repository.find.mockResolvedValue([]);
+
+      // Setup semantic match
+      embeddingsService.generateEmbedding.mockResolvedValue([0.1, 0.2, 0.3]);
+      const mockRawResult = {
+        faq_id: mockFaq.id,
+        faq_question: mockFaq.question,
+        faq_answer: mockFaq.answer,
+        faq_category: mockFaq.category,
+        distance: '0.1', // Low distance = high similarity
+      };
+      // @ts-ignore
+      mockQueryBuilder.getRawOne.mockResolvedValue(mockRawResult);
+
+      const result = await service.query({ query: 'forgot access code' });
+
+      expect(embeddingsService.generateEmbedding).toHaveBeenCalled();
+      expect(repository.createQueryBuilder).toHaveBeenCalled();
+
+      // confidence = 1 - (0.1 / 2) = 0.95
+      expect(result).not.toBeNull();
+      expect(result?.matchType).toBe('semantic');
+      expect(result?.confidence).toBeCloseTo(0.95);
     });
 
     it('TC-005: should handle empty query gracefully', async () => {

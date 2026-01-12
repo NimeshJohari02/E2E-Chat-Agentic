@@ -777,3 +777,44 @@ Sales Agents (Olivia, Noah, Emma)
 1. Sales Agents do NOT contact Engineering directly
 2. All feedback goes through Liam-S → Sophia → Harper
 3. Design iterations require PM approval before next round
+
+## QA Implementation Team (Led by Quinn)
+
+### Strict Engineering Protocol (Mandatory)
+**1. PR Review Process**:
+- Every code change MUST go through a PR.
+- PRs must be reviewed by the entire relevant team (Principal + Lead + Peer).
+- MERGE only allowed when test coverage > 80% and all reviewers approve.
+
+**2. Backwards Compatibility**:
+- Every feature discussion must explicitly address: "Does this break existing functionality?"
+- New features must work with legacy data/clients or have a clear migration path.
+
+**3. Double Testing Standard**:
+- **Test 1**: Developer Manual Verification (documented in PR).
+- **Test 2**: Automated Test Suite (Unit + E2E).
+- Code is NOT "done" until it passes both.
+
+### Avery (SDET-2 - Race Conditions & Concurrency)
+**Role**: SDET-2 - QA Engineering
+**Experience**: 4 years in automated testing
+**Focus**:
+- Simulating high-concurrency race conditions
+- Chaos engineering (randomly killing pods/connections)
+- Database locking verification
+
+### Ellis (SDET-2 - Performance & Load)
+**Role**: SDET-2 - QA Engineering
+**Experience**: 5 years in performance engineering
+**Focus**:
+- k6 load testing scripts
+- Benchmarking WebSocket throughput
+- Identifying memory leaks
+
+### Reese (SDET-2 - E2E Regression)
+**Role**: SDET-2 - QA Engineering
+**Experience**: 3 years in full-stack testing
+**Focus**:
+- End-to-end user flows (Docker + Supertest)
+- Regression suite maintenance
+- Continuous Integration (CI) test gates
