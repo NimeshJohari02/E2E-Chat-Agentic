@@ -33,7 +33,7 @@ export class AuthService {
     // Create agent
     const agent = this.agentRepo.create({
       email: dto.email,
-      password: hashedPassword,
+      passwordHash: hashedPassword,
       name: dto.name,
       status: 'offline',
     });
@@ -58,7 +58,7 @@ export class AuthService {
       return null;
     }
 
-    const isValid = await bcrypt.compare(password, agent.password);
+    const isValid = await bcrypt.compare(password, agent.passwordHash);
     if (!isValid) {
       return null;
     }
@@ -103,12 +103,12 @@ export class AuthService {
     };
 
     const accessToken = this.jwtService.sign(payload, {
-      expiresIn: process.env['JWT_EXPIRES_IN'] || '15m',
+      expiresIn: (process.env['JWT_EXPIRES_IN'] || '15m') as any,
     });
 
     const refreshToken = this.jwtService.sign(payload, {
       secret: process.env['JWT_REFRESH_SECRET'] || 'refresh-secret-change-me',
-      expiresIn: process.env['JWT_REFRESH_EXPIRES_IN'] || '7d',
+      expiresIn: (process.env['JWT_REFRESH_EXPIRES_IN'] || '7d') as any,
     });
 
     return {
