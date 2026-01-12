@@ -41,40 +41,45 @@
 
 ## Component Structure (Charlie - SDE-2)
 
+> **Note**: Frontend lives in separate `frontend/` folder, not `src/`
+
 ```
-src/
-├── app/                    # Next.js App Router
-│   ├── (customer)/         # Customer-facing routes
-│   │   └── chat/           # Chat widget
-│   ├── (agent)/            # Agent dashboard
-│   │   ├── dashboard/
-│   │   ├── queue/
-│   │   └── chats/
-│   └── (admin)/            # Admin portal
-├── components/
-│   ├── ui/                 # shadcn components
-│   ├── chat/               # Chat-specific
-│   │   ├── ChatBubble.tsx
-│   │   ├── ChatInput.tsx
-│   │   ├── TypingIndicator.tsx
-│   │   └── ChatWidget.tsx
-│   ├── queue/              # Queue-specific
-│   │   ├── QueueList.tsx
-│   │   └── QueueItem.tsx
-│   └── dashboard/          # Dashboard-specific
-│       ├── MetricsCard.tsx
-│       └── AgentStatus.tsx
-├── hooks/                  # Custom hooks
-│   ├── useChat.ts
-│   ├── useQueue.ts
-│   └── useWebSocket.ts
-├── lib/                    # Utilities
-│   ├── api.ts              # API client (generated from Swagger)
-│   └── socket.ts           # Socket.io setup
-└── types/                  # Shared types (from BE DTOs)
-    ├── chat.types.ts
-    ├── agent.types.ts
-    └── metrics.types.ts
+chatbot-anti/
+├── src/                    # Backend (NestJS)
+├── frontend/               # Frontend (Next.js) - SEPARATE
+│   ├── app/                # Next.js App Router
+│   │   ├── (customer)/     # Customer-facing routes
+│   │   │   └── chat/       # Chat widget
+│   │   ├── (agent)/        # Agent dashboard
+│   │   │   ├── dashboard/
+│   │   │   ├── queue/
+│   │   │   └── chats/
+│   │   └── (admin)/        # Admin portal
+│   ├── components/
+│   │   ├── ui/             # shadcn components
+│   │   ├── chat/           # Chat-specific
+│   │   │   ├── ChatBubble.tsx
+│   │   │   ├── ChatInput.tsx
+│   │   │   ├── TypingIndicator.tsx
+│   │   │   └── ChatWidget.tsx
+│   │   ├── queue/          # Queue-specific
+│   │   │   ├── QueueList.tsx
+│   │   │   └── QueueItem.tsx
+│   │   └── dashboard/      # Dashboard-specific
+│   │       ├── MetricsCard.tsx
+│   │       └── AgentStatus.tsx
+│   ├── hooks/              # Custom hooks
+│   │   ├── useChat.ts
+│   │   ├── useQueue.ts
+│   │   └── useWebSocket.ts
+│   ├── lib/                # Utilities
+│   │   ├── api.ts          # API client (generated from Swagger)
+│   │   └── socket.ts       # Socket.io setup
+│   └── types/              # Shared types (from BE DTOs)
+│       ├── chat.types.ts
+│       ├── agent.types.ts
+│       └── metrics.types.ts
+└── docs/                   # Documentation
 ```
 
 ---

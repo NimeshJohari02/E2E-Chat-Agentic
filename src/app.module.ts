@@ -9,6 +9,7 @@ import { FaqModule } from './modules/faq';
 import { ChatModule } from './modules/chat';
 import { AgentModule } from './modules/agent';
 import { MetricsModule } from './modules/metrics';
+import { AuthModule } from './modules/auth';
 
 // Import config
 import { DatabaseConfig } from './config/database.config';
@@ -23,6 +24,9 @@ import { DatabaseConfig } from './config/database.config';
 
     // Database connection
     TypeOrmModule.forRoot(DatabaseConfig),
+
+    // Auth module (must be before protected modules)
+    AuthModule,
 
     // Feature modules
     FaqModule,     // L0 Static Queries
