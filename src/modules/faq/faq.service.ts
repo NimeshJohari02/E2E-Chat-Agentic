@@ -26,16 +26,88 @@ export class FaqService {
     const { query, category } = dto;
     const normalizedQuery = query.toLowerCase().trim();
 
-    // Step 1: Semantic match with embeddings
+    // Step 1: Try exact match (Fastest & Most Accurate)
+    const exactMatch = await this.findExactMatch(normalizedQuery, category);
+    if (exactMatch) {
+      this.logger.log(`Exact match found for query: ${query}`);
+      return {
+        id: exactMatch.id,
+        question: exactMatch.question,
+        answer: exactMatch.answer,
+        category: exactMatch.category,
+        confidence: 1.0,
+        matchType: 'exact',
+      };
+    }
+
+    // Step 2: Semantic match with embeddings
     const semanticMatch = await this.findSemanticMatch(normalizedQuery, category);
     if (semanticMatch && semanticMatch.confidence >= this.confidenceThreshold) {
       this.logger.log(`Semantic match found for query: ${query} (confidence: ${semanticMatch.confidence})`);
       return semanticMatch;
     }
 
-    // Fallback logic could go here
+    // Step 3: Try fuzzy match on variations (Fallback)
+    const fuzzyMatch = await this.findFuzzyMatch(normalizedQuery, category);
+    if (fuzzyMatch && fuzzyMatch.confidence >= this.confidenceThreshold) {
+      this.logger.log(`Fuzzy match found for query: ${query} (confidence: ${fuzzyMatch.confidence})`);
+      return fuzzyMatch;
+    }
+
     this.logger.log(`No match found for query: ${query}, routing to L1`);
     return null;
+  }
+
+  private async findFuzzyMatch(query: string, category?: string): Promise<FaqResponseDto | null> {
+    const keywords = query.split(' ').filter(w => w.length > 2);
+    if (keywords.length === 0) return null;
+
+    const whereCondition: FindOptionsWhere<FaqEntity> = { isActive: true };
+    if (category) whereCondition.category = category;
+
+    const faqs = await this.faqRepository.find({ where: whereCondition, order: { priority: 'DESC' } });
+    let bestMatch: FaqEntity | null = null;
+    let bestScore = 0;
+
+    for (const faq of faqs) {
+      const faqText = `${faq.question} ${faq.variations.join(' ')}`.toLowerCase();
+      const matchCount = keywords.filter(k => faqText.includes(k)).length;
+      const score = matchCount / keywords.length;
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = faq;
+      }
+    }
+
+    if (bestMatch && bestScore >= this.confidenceThreshold) {
+      return {
+        id: bestMatch.id,
+        question: bestMatch.question,
+        answer: bestMatch.answer,
+        category: bestMatch.category,
+        confidence: bestScore,
+        matchType: 'fuzzy',
+      };
+    }
+    return null;
+  }
+
+  private async findExactMatch(query: string, category?: string): Promise<FaqEntity | null> {
+    const whereCondition: FindOptionsWhere<FaqEntity> = {
+      isActive: true,
+    };
+
+    if (category) {
+      whereCondition.category = category;
+    }
+
+    // Check question field case-insensitive
+    return this.faqRepository.findOne({
+      where: {
+        ...whereCondition,
+        question: ILike(query),
+      },
+    });
   }
 
   private async findSemanticMatch(query: string, category?: string): Promise<FaqResponseDto | null> {
