@@ -4,10 +4,12 @@ import { FaqController } from './faq.controller';
 import { FaqService } from './faq.service';
 import { FaqEntity } from './entities/faq.entity';
 
+import { EmbeddingsService } from './embeddings.service';
+
 @Module({
   imports: [TypeOrmModule.forFeature([FaqEntity])],
   controllers: [FaqController],
-  providers: [FaqService],
-  exports: [FaqService],
+  providers: [FaqService, EmbeddingsService],
+  exports: [FaqService, EmbeddingsService],
 })
 export class FaqModule {}

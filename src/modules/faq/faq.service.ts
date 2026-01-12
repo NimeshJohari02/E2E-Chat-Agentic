@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, FindOptionsWhere } from 'typeorm';
 import { FaqEntity } from './entities/faq.entity';
 import { CreateFaqDto, UpdateFaqDto, QueryFaqDto, FaqResponseDto } from './dto/faq.dto';
+import { EmbeddingsService } from './embeddings.service';
 
 @Injectable()
 export class FaqService {
@@ -14,6 +15,7 @@ export class FaqService {
   constructor(
     @InjectRepository(FaqEntity)
     private readonly faqRepository: Repository<FaqEntity>,
+    private readonly embeddingsService: EmbeddingsService,
   ) {}
 
   /**
@@ -24,108 +26,79 @@ export class FaqService {
     const { query, category } = dto;
     const normalizedQuery = query.toLowerCase().trim();
 
-    // Step 1: Try exact match
-    const exactMatch = await this.findExactMatch(normalizedQuery, category);
-    if (exactMatch) {
-      this.logger.log(`Exact match found for query: ${query}`);
-      return {
-        id: exactMatch.id,
-        question: exactMatch.question,
-        answer: exactMatch.answer,
-        category: exactMatch.category,
-        confidence: 1.0,
-        matchType: 'exact',
-      };
+    // Step 1: Semantic match with embeddings
+    const semanticMatch = await this.findSemanticMatch(normalizedQuery, category);
+    if (semanticMatch && semanticMatch.confidence >= this.confidenceThreshold) {
+      this.logger.log(`Semantic match found for query: ${query} (confidence: ${semanticMatch.confidence})`);
+      return semanticMatch;
     }
 
-    // Step 2: Try fuzzy match on variations
-    const fuzzyMatch = await this.findFuzzyMatch(normalizedQuery, category);
-    if (fuzzyMatch && fuzzyMatch.confidence >= this.confidenceThreshold) {
-      this.logger.log(`Fuzzy match found for query: ${query} (confidence: ${fuzzyMatch.confidence})`);
-      return fuzzyMatch;
-    }
-
-    // Step 3: No match above threshold - route to L1
+    // Fallback logic could go here
     this.logger.log(`No match found for query: ${query}, routing to L1`);
     return null;
   }
 
-  private async findExactMatch(query: string, category?: string): Promise<FaqEntity | null> {
-    const whereCondition: FindOptionsWhere<FaqEntity> = {
-      isActive: true,
-    };
+  private async findSemanticMatch(query: string, category?: string): Promise<FaqResponseDto | null> {
+    try {
+      const embedding = await this.embeddingsService.generateEmbedding(query);
+      const embeddingString = `[${embedding.join(',')}]`;
 
-    if (category) {
-      whereCondition.category = category;
-    }
+      // Use TypeORM raw query for pgvector cosine distance
+      // operator <=> is cosine distance
+      const queryBuilder = this.faqRepository.createQueryBuilder('faq')
+        .select([
+            'faq.id',
+            'faq.question',
+            'faq.answer',
+            'faq.category',
+            '(faq.embedding <=> :embedding) as distance'
+        ])
+        .where('faq.isActive = :isActive', { isActive: true })
+        .setParameter('embedding', embeddingString)
+        .orderBy('distance', 'ASC')
+        .limit(1);
 
-    // Check question field
-    const exactQuestionMatch = await this.faqRepository.findOne({
-      where: {
-        ...whereCondition,
-        question: ILike(query),
-      },
-    });
+      if (category) {
+        queryBuilder.andWhere('faq.category = :category', { category });
+      }
 
-    if (exactQuestionMatch) {
-      return exactQuestionMatch;
-    }
+      const result = await queryBuilder.getRawOne();
 
-    // Check variations (would need custom query for array contains)
-    return null;
-  }
+      if (result) {
+        // Convert distance to similarity score (0 to 1)
+        // distance is 0 for identical, approaches 2 for opposite
+        const distance = parseFloat(result.distance);
+        const confidence = 1 - (distance / 2); // Approximation
 
-  private async findFuzzyMatch(query: string, category?: string): Promise<FaqResponseDto | null> {
-    // Simple keyword matching for now
-    // TODO: Implement Levenshtein distance or pgvector semantic search
-    const keywords = query.split(' ').filter(w => w.length > 2);
-
-    if (keywords.length === 0) {
+        return {
+          id: result.faq_id,
+          question: result.faq_question,
+          answer: result.faq_answer,
+          category: result.faq_category,
+          confidence,
+          matchType: 'semantic',
+        };
+      }
+      return null;
+    } catch (error) {
+      this.logger.error('Error during semantic search', error);
       return null;
     }
-
-    const whereCondition: FindOptionsWhere<FaqEntity> = { isActive: true };
-    if (category) {
-      whereCondition.category = category;
-    }
-
-    const faqs = await this.faqRepository.find({
-      where: whereCondition,
-      order: { priority: 'DESC' },
-    });
-
-    let bestMatch: FaqEntity | null = null;
-    let bestScore = 0;
-
-    for (const faq of faqs) {
-      const faqText = `${faq.question} ${faq.variations.join(' ')}`.toLowerCase();
-      const matchCount = keywords.filter(k => faqText.includes(k)).length;
-      const score = matchCount / keywords.length;
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = faq;
-      }
-    }
-
-    if (bestMatch && bestScore >= this.confidenceThreshold) {
-      return {
-        id: bestMatch.id,
-        question: bestMatch.question,
-        answer: bestMatch.answer,
-        category: bestMatch.category,
-        confidence: bestScore,
-        matchType: 'fuzzy',
-      };
-    }
-
-    return null;
   }
 
   // CRUD Operations for Admin
 
   async create(dto: CreateFaqDto): Promise<FaqEntity> {
     const faq = this.faqRepository.create(dto);
+
+    // Generate embedding
+    try {
+      const textToEmbed = `${dto.question} ${dto.variations?.join(' ') || ''}`;
+      faq.embedding = await this.embeddingsService.generateEmbedding(textToEmbed);
+    } catch (e) {
+      this.logger.warn(`Failed to generate embedding for FAQ: ${dto.question}`);
+    }
+
     return this.faqRepository.save(faq);
   }
 
