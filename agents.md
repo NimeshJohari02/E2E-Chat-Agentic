@@ -781,16 +781,20 @@ Sales Agents (Olivia, Noah, Emma)
 ## QA Implementation Team (Led by Quinn)
 
 ### Strict Engineering Protocol (Mandatory)
-**1. PR Review Process**:
-- Every code change MUST go through a PR.
-- PRs must be reviewed by the entire relevant team (Principal + Lead + Peer).
-- MERGE only allowed when test coverage > 80% and all reviewers approve.
+**1. Zero Tolerance PR Policy**:
+- **CRITICAL**: No code edit tool (`replace_file_content`, `write_to_file`) may be used WITHOUT a corresponding PR artifact in `docs/prs/` created FIRST.
+- Any direct edit without a PR number is a **Process Violation**.
 
-**2. Backwards Compatibility**:
-- Every feature discussion must explicitly address: "Does this break existing functionality?"
-- New features must work with legacy data/clients or have a clear migration path.
+**2. PR Review & Lead Sign-off**:
+- A PR is NOT valid until it has two named sections:
+  - `## Backwards Compatibility`: Must state "YES" (safe) or describe migration plan.
+  - `## Lead Approval`: Must contain specific Lead signature.
+- Self-approval is BANNED.
 
-**3. Double Testing Standard**:
+**3. Test Coverage Gate**:
+- MERGE only allowed when test coverage > 80%.
+
+**4. Double Testing Standard**:
 - **Test 1**: Developer Manual Verification (documented in PR).
 - **Test 2**: Automated Test Suite (Unit + E2E).
 - Code is NOT "done" until it passes both.

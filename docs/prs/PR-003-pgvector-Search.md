@@ -26,3 +26,12 @@ Adds semantic search capabilities to FAQ engine using `pgvector` and OpenAI embe
 
 ## Outcome
 **Approved** for merge into `release/1.0.0`. Validated against `chatbot-postgres` container.
+
+## Backwards Compatibility
+- [x] YES: New `vector` column is nullable. Existing queries work without embeddings.
+- [ ] NO: Breaking change.
+
+## Lead Approval
+> **Marcus (Feature Lead)**:
+> "Feature meets semantic search requirements. Database interactions approved by Garrett. Good fallback logic."
+> **Verdict**: APPROVED ✅
