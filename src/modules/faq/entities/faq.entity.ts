@@ -36,8 +36,8 @@ export class FaqEntity {
   isActive: boolean;
 
   // Vector embedding for semantic search (pgvector)
-  // @Column({ type: 'vector', nullable: true })
-  // embedding: number[];
+  @Column({ type: 'vector', nullable: true })
+  embedding: number[];
 
   @CreateDateColumn()
   createdAt: Date;
