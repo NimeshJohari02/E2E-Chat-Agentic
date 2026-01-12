@@ -1,98 +1,77 @@
 <p align="center">
   <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
+  <h1>E2E Chat Agentic Backend</h1>
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 📖 Source of Truth
+This repository is the backend for the E2E Chat Agentic system. This `README` serves as the central index (The "Book") for all project documentation, processes, and requirements.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+### 👥 Team & Process
+*   **[Team Roles & Responsibilities](agents.md)** (The Team Persona Definition)
+*   **[Strict Engineering Protocol](agents.md#strict-engineering-protocol-mandatory)** (Mandatory for all Devs)
+*   **[Bug Tracking Workflow](docs/BUG-TRACKER.md)**
+*   **[Code Review Process](docs/BE-REVIEW-BACKLOG.md)**
 
-## Description
+### 📚 Product Requirements (PRDs)
+*   **[PRD-001: L0 Static Query Engine](docs/PRD-001-L0-Static-Query-Engine.md)** (FAQ & Embeddings)
+*   **[PRD-002: L1 AI Chatbot](docs/PRD-002-L1-AI-Chatbot.md)** (RAG & Model Routing)
+*   **[PRD-003: L2 Agent Handoff](docs/PRD-003-L2-Agent-Handoff.md)** (WebSocket & CRM)
+*   **[PRD-004: Agent Dashboard](docs/PRD-004-Agent-Efficiency-Metrics.md)** (Metrics & Analytics)
+*   **[PRD-005: Observability](docs/PRD-005-Observability.md)** (Monitoring & Logging)
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### 🏗 Architecture & Design
+*   **[High Level Design (HLD)](docs/HLD-System-Architecture.md)**
+*   **[Low Level Design (LLD)](docs/LLD-Detailed-Design.md)**
+*   **[Frontend Architecture Contract](docs/FE-ARCHITECTURE.md)** (API Contracts for FE Team)
+*   **[Production Guide](docs/PRODUCTION-GUIDE.md)**
 
-## Project setup
+### 📝 Change Log & PR Artifacts
+*   **[PR-001: TypeScript Standardization](docs/prs/PR-001-TypeScript-Standardization.md)**
+*   **[PR-002: WebSocket Gateway](docs/prs/PR-002-WebSocket-Gateway.md)**
+*   **[PR-003: pgvector Search](docs/prs/PR-003-pgvector-Search.md)**
+*   **[PR-004: Unit Test Coverage](docs/prs/PR-004-Test-Coverage.md)**
 
+---
+
+## 🚀 Getting Started
+
+### Prerequisites
+*   Node.js v18+
+*   Docker & Docker Compose (for PostgreSQL + pgvector)
+
+### Installation
 ```bash
 $ npm install
 ```
 
-## Compile and run the project
+### Running the Environment
+1.  **Start Database (Postgres + pgvector)**
+    ```bash
+    $ docker-compose up -d
+    ```
+2.  **Run Application**
+    ```bash
+    # development
+    $ npm run start
 
-```bash
-# development
-$ npm run start
+    # watch mode
+    $ npm run start:dev
+    ```
 
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
-```
-
-## Run tests
-
+### Testing
+**Strict Protocol**: All code must pass compliance with 80% coverage.
 ```bash
 # unit tests
 $ npm run test
 
+# test coverage (Must range > 80%)
+$ npm run test:cov
+
 # e2e tests
 $ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
 ```
 
-## Deployment
+---
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
-```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+## 🛡 License
+Nest is [MIT licensed](LICENSE).
