@@ -7,7 +7,8 @@
 This repository is the backend for the E2E Chat Agentic system. This `README` serves as the central index (The "Book") for all project documentation, processes, and requirements.
 
 ### 👥 Team & Process
-*   **[Team Roles & Responsibilities](agents.md)** (The Team Persona Definition)
+*   **[Team Roles (Who)](agents.md)** (The Team Persona Definition)
+*   **[Team Strategy (Why)](agent_config.md)** (Rationale behind the structure)
 *   **[Strict Engineering Protocol](agents.md#strict-engineering-protocol-mandatory)** (Mandatory for all Devs)
 *   **[Bug Tracking Workflow](docs/BUG-TRACKER.md)**
 *   **[Code Review Process](docs/BE-REVIEW-BACKLOG.md)**
