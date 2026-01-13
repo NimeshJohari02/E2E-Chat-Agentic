@@ -1,0 +1,1071 @@
+{
+  "info": {
+    "_postman_id": "chatbot-backend-api-collection",
+    "name": "Chatbot Backend API",
+    "description": "Comprehensive API collection for the 3-tier Chatbot Support System.\n\n## Tiers\n- **L0 (FAQ)**: Static query matching\n- **L1 (Chat)**: AI-powered conversations\n- **L2 (Agent)**: Human agent handoff\n\n## Authentication\nMost endpoints require JWT authentication. Use the Auth endpoints to obtain a token.\n\n## Base URL\n- **Development**: `http://localhost:8090`\n- **Production**: Configure in environment",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8090",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health & System",
+      "description": "System health and observability endpoints",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            },
+            "description": "Returns application health status, version, and uptime information."
+          },
+          "response": [
+            {
+              "name": "Success",
+              "originalRequest": {
+                "method": "GET",
+                "url": {
+                  "raw": "{{baseUrl}}/health",
+                  "host": ["{{baseUrl}}"],
+                  "path": ["health"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"status\": \"ok\",\n  \"version\": \"0.0.1\",\n  \"timestamp\": \"2026-01-13T12:00:00.000Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Prometheus Metrics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/metrics",
+              "host": ["{{baseUrl}}"],
+              "path": ["metrics"]
+            },
+            "description": "Returns Prometheus-formatted metrics for monitoring.\n\n**Metrics Include:**\n- `chatbot_active_conversations_total`\n- `chatbot_queue_depth`\n- `chatbot_api_request_duration_seconds`\n- Default Node.js metrics (CPU, memory, etc.)"
+          },
+          "response": []
+        },
+        {
+          "name": "Swagger Docs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/docs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "docs"]
+            },
+            "description": "Interactive Swagger UI documentation for all API endpoints."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "description": "Authentication and authorization endpoints. JWT-based authentication system.",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\",\n  \"name\": \"John Doe\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "auth", "register"]
+            },
+            "description": "Register a new user account.\n\n**Password Requirements:**\n- Minimum 8 characters\n- At least 1 uppercase letter\n- At least 1 number\n- At least 1 special character"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": \"uuid-here\",\n  \"email\": \"user@example.com\",\n  \"name\": \"John Doe\",\n  \"createdAt\": \"2026-01-13T12:00:00.000Z\"\n}"
+            },
+            {
+              "name": "Email Already Exists",
+              "status": "Conflict",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"statusCode\": 409,\n  \"message\": \"Email already registered\",\n  \"error\": \"Conflict\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.environment.set('accessToken', jsonData.accessToken);",
+                  "    pm.environment.set('refreshToken', jsonData.refreshToken);",
+                  "    console.log('Tokens saved to environment');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"SecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "auth", "login"]
+            },
+            "description": "Authenticate user and receive JWT tokens.\n\n**Response tokens are automatically saved to environment variables.**"
+          },
+          "response": [
+            {
+              "name": "Success",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"accessToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"refreshToken\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"expiresIn\": 3600\n}"
+            },
+            {
+              "name": "Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"statusCode\": 401,\n  \"message\": \"Invalid credentials\",\n  \"error\": \"Unauthorized\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.accessToken) {",
+                  "    pm.environment.set('accessToken', jsonData.accessToken);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "auth", "refresh"]
+            },
+            "description": "Refresh expired access token using refresh token."
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "auth", "logout"]
+            },
+            "description": "Invalidate current session and tokens."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Current User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "auth", "me"]
+            },
+            "description": "Get current authenticated user's profile information."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "FAQ (L0)",
+      "description": "L0 Static Query Engine - FAQ matching with exact, semantic, and fuzzy search.",
+      "item": [
+        {
+          "name": "Query FAQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"What are your business hours?\",\n  \"category\": \"general\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/query",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "query"]
+            },
+            "description": "Query the FAQ database using hybrid search.\n\n**Search Strategy (in order):**\n1. **Exact Match** - Keyword matching (fastest)\n2. **Semantic Search** - pgvector embeddings (most accurate)\n3. **Fuzzy Match** - ILIKE fallback\n\n**Parameters:**\n- `query` (required): The user's question\n- `category` (optional): Filter by category"
+          },
+          "response": [
+            {
+              "name": "Match Found",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"id\": \"faq-uuid\",\n  \"question\": \"What are your business hours?\",\n  \"answer\": \"We are open Monday to Friday, 9 AM to 6 PM.\",\n  \"category\": \"general\",\n  \"confidence\": 0.95,\n  \"matchType\": \"semantic\"\n}"
+            },
+            {
+              "name": "No Match (Escalate to L1)",
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "body": "null"
+            }
+          ]
+        },
+        {
+          "name": "Get All FAQs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/faqs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "faqs"]
+            },
+            "description": "Retrieve all FAQs ordered by category and priority.\n\n**Note:** Results are cached for 5 minutes (Redis if available, in-memory otherwise)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get FAQ by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/faqs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "faqs", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "faq-uuid-here",
+                  "description": "FAQ UUID"
+                }
+              ]
+            },
+            "description": "Get a specific FAQ by its ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Create FAQ",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"question\": \"How do I reset my password?\",\n  \"answer\": \"Click on 'Forgot Password' on the login page and follow the instructions.\",\n  \"category\": \"account\",\n  \"priority\": 10,\n  \"keywords\": [\"password\", \"reset\", \"forgot\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/faqs",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "faqs"]
+            },
+            "description": "Create a new FAQ entry.\n\n**Note:** Embeddings are automatically generated for semantic search."
+          },
+          "response": []
+        },
+        {
+          "name": "Update FAQ",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"answer\": \"Updated answer here\",\n  \"priority\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/faqs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "faqs", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "faq-uuid-here"
+                }
+              ]
+            },
+            "description": "Update an existing FAQ. Only provided fields are updated."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete FAQ",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/faqs/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "faqs", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "faq-uuid-here"
+                }
+              ]
+            },
+            "description": "Soft delete an FAQ (marks as inactive)."
+          },
+          "response": []
+        },
+        {
+          "name": "Import FAQs (Bulk)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"faqs\": [\n    {\n      \"question\": \"FAQ 1\",\n      \"answer\": \"Answer 1\",\n      \"category\": \"general\"\n    },\n    {\n      \"question\": \"FAQ 2\",\n      \"answer\": \"Answer 2\",\n      \"category\": \"orders\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/faqs/import",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "faqs", "import"]
+            },
+            "description": "Bulk import FAQs from JSON."
+          },
+          "response": []
+        },
+        {
+          "name": "Export FAQs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/faqs/export",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "faqs", "export"]
+            },
+            "description": "Export all FAQs as JSON for backup or migration."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chat (L1)",
+      "description": "L1 AI Chatbot - Intelligent conversation with LLM providers (OpenAI, Anthropic, Groq).",
+      "item": [
+        {
+          "name": "Send Message",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"message\": \"I need help with my order\",\n  \"context\": {\n    \"orderId\": \"ORD-12345\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/chat",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "chat"]
+            },
+            "description": "Send a message to the AI chatbot.\n\n**Flow:**\n1. System first checks L0 (FAQ) for a match\n2. If no FAQ match, routes to L1 (AI)\n3. AI generates response with conversation context\n4. If AI confidence low, can escalate to L2 (Agent)\n\n**Parameters:**\n- `sessionId`: Unique session identifier (auto-generated if not provided)\n- `message`: User's message\n- `context` (optional): Additional context for the AI"
+          },
+          "response": [
+            {
+              "name": "AI Response",
+              "status": "Created",
+              "code": 201,
+              "_postman_previewlanguage": "json",
+              "body": "{\n  \"sessionId\": \"session-uuid\",\n  \"response\": \"I'd be happy to help with your order ORD-12345. What seems to be the issue?\",\n  \"source\": \"ai\",\n  \"model\": \"gpt-4\",\n  \"tokensUsed\": 150,\n  \"shouldEscalate\": false\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Session History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/chat/session/:sessionId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "chat", "session", ":sessionId"],
+              "variable": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}",
+                  "description": "Chat session ID"
+                }
+              ]
+            },
+            "description": "Retrieve conversation history for a session.\n\n**Note:** Only the last 10 messages are kept in context (sliding window)."
+          },
+          "response": []
+        },
+        {
+          "name": "Escalate to Agent (L2)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"reason\": \"Customer requested human agent\",\n  \"priority\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/chat/escalate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "chat", "escalate"]
+            },
+            "description": "Manually escalate a conversation to a human agent (L2).\n\n**Triggers:**\n- User explicitly requests an agent\n- AI confidence below threshold\n- Sensitive topics detected"
+          },
+          "response": []
+        },
+        {
+          "name": "Model Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/models/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "models", "health"]
+            },
+            "description": "Check health status of all configured AI providers."
+          },
+          "response": []
+        },
+        {
+          "name": "Switch Model Provider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"anthropic\",\n  \"model\": \"claude-3-opus\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/models/switch",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "models", "switch"]
+            },
+            "description": "Switch the active AI model provider.\n\n**Available Providers:**\n- `openai` (gpt-4, gpt-3.5-turbo)\n- `anthropic` (claude-3-opus, claude-3-sonnet)\n- `groq` (mixtral-8x7b)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Agents (L2)",
+      "description": "L2 Agent Management - Queue, assignment, and human agent operations.",
+      "item": [
+        {
+          "name": "Agent Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set('agentToken', jsonData.token);",
+                  "    pm.environment.set('agentId', jsonData.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"agent@example.com\",\n  \"password\": \"AgentPass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/agents/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "agents", "login"]
+            },
+            "description": "Authenticate as a support agent.\n\nToken is saved automatically for subsequent requests."
+          },
+          "response": []
+        },
+        {
+          "name": "Agent Logout",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{agentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/agents/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "agents", "logout"]
+            },
+            "description": "Log out the current agent and set status to offline."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Agent Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{agentToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"online\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/agents/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "agents", "status"]
+            },
+            "description": "Update agent availability status.\n\n**Valid Statuses:**\n- `online` - Available for new conversations\n- `busy` - Currently handling max conversations\n- `away` - Temporarily unavailable\n- `offline` - Not accepting conversations"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Queue",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{agentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/queue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "queue"]
+            },
+            "description": "Get list of conversations waiting in queue for agent assignment."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Queue Position",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/queue/position/:conversationId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "queue", "position", ":conversationId"],
+              "variable": [
+                {
+                  "key": "conversationId",
+                  "value": "{{sessionId}}"
+                }
+              ]
+            },
+            "description": "Check the queue position for a specific conversation."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Next from Queue",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{agentToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/queue/assign",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "queue", "assign"]
+            },
+            "description": "Assign the next conversation from queue to the current agent.\n\n**Note:** Uses pessimistic locking to prevent race conditions."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Agents",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "agents"]
+            },
+            "description": "Get list of all registered agents (admin only)."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Online Agents",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/agents/online",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "agents", "online"]
+            },
+            "description": "Get list of currently online agents."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Agent",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Agent\",\n  \"email\": \"newagent@example.com\",\n  \"password\": \"AgentPass123!\",\n  \"skills\": [\"general\", \"billing\", \"technical\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "agents"]
+            },
+            "description": "Create a new support agent account (admin only)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Metrics & Analytics",
+      "description": "Analytics, reporting, and efficiency metrics.",
+      "item": [
+        {
+          "name": "Get Dashboard Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/metrics/dashboard?startDate=2024-01-01&endDate=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "metrics", "dashboard"],
+              "query": [
+                {
+                  "key": "startDate",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "endDate",
+                  "value": "2024-12-31"
+                }
+              ]
+            },
+            "description": "Get dashboard overview metrics.\n\n**Includes:**\n- Total conversations\n- Resolution rates by tier\n- Average response times\n- Queue depth over time"
+          },
+          "response": []
+        },
+        {
+          "name": "Get Agent Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/metrics/agents/:agentId",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "metrics", "agents", ":agentId"],
+              "variable": [
+                {
+                  "key": "agentId",
+                  "value": "{{agentId}}"
+                }
+              ]
+            },
+            "description": "Get performance metrics for a specific agent."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Queue Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/metrics/queue",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "metrics", "queue"]
+            },
+            "description": "Get current queue metrics and statistics."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Analytics Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/analytics/summary",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "analytics", "summary"]
+            },
+            "description": "Get high-level analytics summary."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Agents Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/analytics/agents",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "analytics", "agents"]
+            },
+            "description": "Get aggregated analytics for all agents."
+          },
+          "response": []
+        },
+        {
+          "name": "Export Analytics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/analytics/export?format=csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "analytics", "export"],
+              "query": [
+                {
+                  "key": "format",
+                  "value": "csv",
+                  "description": "Export format: csv or json"
+                }
+              ]
+            },
+            "description": "Export analytics data in CSV or JSON format."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Reports",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "reports"]
+            },
+            "description": "Get list of configured reports."
+          },
+          "response": []
+        },
+        {
+          "name": "Create Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Weekly Performance Report\",\n  \"type\": \"performance\",\n  \"schedule\": \"weekly\",\n  \"recipients\": [\"manager@example.com\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/reports",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "reports"]
+            },
+            "description": "Create a new scheduled report."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Report",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"schedule\": \"daily\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/reports/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "reports", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "report-uuid"
+                }
+              ]
+            },
+            "description": "Update report configuration."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Report",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/reports/:id",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "reports", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "report-uuid"
+                }
+              ]
+            },
+            "description": "Delete a scheduled report."
+          },
+          "response": []
+        },
+        {
+          "name": "Test Report",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/{{apiVersion}}/reports/:id/test",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "{{apiVersion}}", "reports", ":id", "test"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "report-uuid"
+                }
+              ]
+            },
+            "description": "Send a test report to configured recipients."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
