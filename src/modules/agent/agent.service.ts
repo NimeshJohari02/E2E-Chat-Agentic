@@ -146,9 +146,10 @@ export class AgentService {
 
   // FIXED: Transactional assignment to prevent Race Condition (BUG-001)
   async assignNextToAgent(agentId: string): Promise<QueueEntryEntity | null> {
-    return this.dataSource.transaction(async (manager: EntityManager) => {
-      // 1. Get Agent (with lock to safely check/update chat count)
-      const agent = await manager.findOne(AgentEntity, {
+    // Use a transaction to safely pick the next item without race conditions
+    return await this.queueRepo.manager.transaction(async (transactionalEntityManager) => {
+      // Re-fetch agent inside transaction with lock to ensure currentChats is fresh
+      const agent = await transactionalEntityManager.findOne(AgentEntity, {
         where: { id: agentId },
         lock: { mode: 'pessimistic_write' },
       });
@@ -162,8 +163,9 @@ export class AgentService {
         throw new Error('Agent has reached maximum concurrent chats');
       }
 
-      // 2. Get next in queue (with lock to ensure only ONE agent picks this)
-      const nextEntry = await manager.findOne(QueueEntryEntity, {
+      // Lock the row for update (skip locked rows so we don't block other agents, or just wait)
+      // pessimistic_write == SELECT ... FOR UPDATE
+      const nextEntry = await transactionalEntityManager.findOne(QueueEntryEntity, {
         where: { status: 'waiting' },
         order: { priority: 'DESC', createdAt: 'ASC' },
         lock: { mode: 'pessimistic_write' },
@@ -173,20 +175,19 @@ export class AgentService {
         return null;
       }
 
-      // 3. Assign
+      // Assign to agent
       nextEntry.status = 'assigned';
       nextEntry.assignedAgentId = agentId;
       nextEntry.assignedAt = new Date();
-      await manager.save(nextEntry);
+      await transactionalEntityManager.save(nextEntry);
 
-      // 4. Update agent's list
+      // Update agent's current chats
       agent.currentChats.push(nextEntry.conversationId);
       agent.status = 'busy';
       agent.lastActiveAt = new Date();
-      await manager.save(agent);
+      await transactionalEntityManager.save(agent);
 
       this.logger.log(`Conversation ${nextEntry.conversationId} assigned to agent ${agent.email}`);
-
       return nextEntry;
     });
   }
