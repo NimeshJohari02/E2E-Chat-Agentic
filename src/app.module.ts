@@ -13,6 +13,7 @@ import { AgentModule } from './modules/agent';
 import { MetricsModule } from './modules/metrics';
 import { AuthModule } from './modules/auth';
 import { PrometheusModule } from './common/prometheus/prometheus.module';
+import { RedisCacheModule } from './common/cache/redis-cache.module';
 
 // Import config
 import { DatabaseConfig } from './config/database.config';
@@ -45,6 +46,9 @@ import { DatabaseConfig } from './config/database.config';
 
     // Observability
     PrometheusModule,
+
+    // Caching
+    RedisCacheModule,
   ],
   controllers: [AppController],
   providers: [

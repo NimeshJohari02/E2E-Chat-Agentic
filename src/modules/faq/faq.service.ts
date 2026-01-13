@@ -1,6 +1,8 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, ILike, FindOptionsWhere } from 'typeorm';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import { FaqEntity } from './entities/faq.entity';
 import { CreateFaqDto, UpdateFaqDto, QueryFaqDto, FaqResponseDto } from './dto/faq.dto';
 import { EmbeddingsService } from './embeddings.service';
@@ -11,11 +13,14 @@ export class FaqService {
 
   // Configurable confidence threshold for routing to L1
   private readonly confidenceThreshold = 0.7;
+  private readonly FAQ_CACHE_KEY = 'faqs:all';
+  private readonly FAQ_CACHE_TTL = 300; // 5 minutes
 
   constructor(
     @InjectRepository(FaqEntity)
     private readonly faqRepository: Repository<FaqEntity>,
     private readonly embeddingsService: EmbeddingsService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   /**
@@ -175,9 +180,21 @@ export class FaqService {
   }
 
   async findAll(): Promise<FaqEntity[]> {
-    return this.faqRepository.find({
+    // Check cache first
+    const cached = await this.cacheManager.get<FaqEntity[]>(this.FAQ_CACHE_KEY);
+    if (cached) {
+      this.logger.log('FAQs served from cache');
+      return cached;
+    }
+
+    // Fetch from DB and cache
+    const faqs = await this.faqRepository.find({
       order: { category: 'ASC', priority: 'DESC' },
     });
+
+    await this.cacheManager.set(this.FAQ_CACHE_KEY, faqs, this.FAQ_CACHE_TTL);
+    this.logger.log('FAQs fetched from DB and cached');
+    return faqs;
   }
 
   async findOne(id: string): Promise<FaqEntity> {
