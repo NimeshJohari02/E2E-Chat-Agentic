@@ -12,6 +12,7 @@ import { ChatModule } from './modules/chat';
 import { AgentModule } from './modules/agent';
 import { MetricsModule } from './modules/metrics';
 import { AuthModule } from './modules/auth';
+import { PrometheusModule } from './common/prometheus/prometheus.module';
 
 // Import config
 import { DatabaseConfig } from './config/database.config';
@@ -41,6 +42,9 @@ import { DatabaseConfig } from './config/database.config';
     ChatModule,    // L1 AI Chatbot
     AgentModule,   // L2 Agent Handoff
     MetricsModule, // Efficiency Tracking
+
+    // Observability
+    PrometheusModule,
   ],
   controllers: [AppController],
   providers: [

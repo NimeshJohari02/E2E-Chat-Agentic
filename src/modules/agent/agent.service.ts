@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, EntityManager } from 'typeorm';
+import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { AgentEntity, QueueEntryEntity } from './entities/agent.entity';
 import {
@@ -22,7 +22,6 @@ export class AgentService {
     private readonly agentRepo: Repository<AgentEntity>,
     @InjectRepository(QueueEntryEntity)
     private readonly queueRepo: Repository<QueueEntryEntity>,
-    private readonly dataSource: DataSource,
   ) {}
 
   // ============================================
