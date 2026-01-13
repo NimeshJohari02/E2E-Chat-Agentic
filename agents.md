@@ -791,10 +791,18 @@ Sales Agents (Olivia, Noah, Emma)
   - `## Lead Approval`: Must contain specific Lead signature.
 - Self-approval is BANNED.
 
-**3. Test Coverage Gate**:
+**3. Mandatory CI Gate (Pre-Merge Checklist)**:
+- **NO MERGE** is allowed until ALL of the following pass:
+  1. `npm run build` → Exit code 0 (TypeScript compiles)
+  2. `npm run test` → All unit tests pass
+  3. `npm run lint` → No lint errors
+- If ANY step fails, the merge is **BLOCKED** until fixed.
+- The developer MUST paste the command output in the PR artifact as proof.
+
+**4. Test Coverage Gate**:
 - MERGE only allowed when test coverage > 80%.
 
-**4. Double Testing Standard**:
+**5. Double Testing Standard**:
 - **Test 1**: Developer Manual Verification (documented in PR).
 - **Test 2**: Automated Test Suite (Unit + E2E).
 - Code is NOT "done" until it passes both.
