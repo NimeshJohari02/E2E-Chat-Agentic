@@ -44,6 +44,16 @@ export class CreateFaqDto {
   tags?: string[];
 
   @ApiPropertyOptional({
+    description: 'Keywords for search (legacy alias for tags)',
+    example: ['password', 'security'],
+    type: [String],
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  keywords?: string[];
+
+  @ApiPropertyOptional({
     description: 'Priority for matching (higher = preferred)',
     example: 10,
     minimum: 0,
