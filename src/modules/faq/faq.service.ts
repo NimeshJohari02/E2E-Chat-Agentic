@@ -169,15 +169,23 @@ export class FaqService {
   // CRUD Operations for Admin
 
   async create(dto: CreateFaqDto): Promise<FaqEntity> {
+    // Legacy support: Map keywords to tags
+    if (dto.keywords && dto.keywords.length > 0) {
+      dto.tags = [...(dto.tags || []), ...dto.keywords];
+    }
+
     const faq = this.faqRepository.create(dto);
 
     // Generate embedding
     try {
-      const textToEmbed = `${dto.question} ${dto.variations?.join(' ') || ''}`;
+      const textToEmbed = `${dto.question} ${dto.variations?.join(' ') || ''} ${dto.tags?.join(' ') || ''}`;
       faq.embedding = await this.embeddingsService.generateEmbedding(textToEmbed);
     } catch (e) {
       this.logger.warn(`Failed to generate embedding for FAQ: ${dto.question}`);
     }
+
+    // Invalidate cache
+    await this.cacheManager.del(this.FAQ_CACHE_KEY);
 
     return this.faqRepository.save(faq);
   }
@@ -220,7 +228,25 @@ export class FaqService {
   }
 
   async bulkImport(faqs: CreateFaqDto[]): Promise<FaqEntity[]> {
-    const entities = faqs.map(dto => this.faqRepository.create(dto));
+    const entities = [];
+    for (const dto of faqs) {
+        // Legacy support mapping
+        if (dto.keywords && dto.keywords.length > 0) {
+            dto.tags = [...(dto.tags || []), ...dto.keywords];
+        }
+
+        const faq = this.faqRepository.create(dto);
+        // Best effort embedding generation for bulk import
+        try {
+            const textToEmbed = `${dto.question} ${dto.variations?.join(' ') || ''} ${dto.tags?.join(' ') || ''}`;
+            faq.embedding = await this.embeddingsService.generateEmbedding(textToEmbed);
+        } catch (e) {
+             // Continue without embedding
+        }
+        entities.push(faq);
+    }
+
+    await this.cacheManager.del(this.FAQ_CACHE_KEY);
     return this.faqRepository.save(entities);
   }
 
