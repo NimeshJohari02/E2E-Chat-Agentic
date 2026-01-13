@@ -166,7 +166,7 @@ export class ChatService {
   /**
    * Escalate conversation to L2 (human agent)
    */
-  async escalateToL2(dto: EscalateDto): Promise<{ success: boolean; message: string; tier: 'L2' }> {
+  async escalateToL2(dto: EscalateDto): Promise<{ sessionId: string; success: boolean; message: string; tier: 'L2' }> {
     const { sessionId, reason } = dto;
 
     if (sessionId) {
@@ -185,6 +185,7 @@ export class ChatService {
     this.logger.log(`Conversation ${sessionId} escalated to L2: ${reason}`);
 
     return {
+      sessionId,
       success: true,
       message: 'You are being connected to a customer service agent. Please wait.',
       tier: 'L2',

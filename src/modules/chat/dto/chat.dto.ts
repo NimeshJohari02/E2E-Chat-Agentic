@@ -45,6 +45,7 @@ export interface ChatResponseDto {
 }
 
 export interface EscalationResponseDto {
+  sessionId: string;
   success: boolean;
   message: string;
   tier: 'L2';
