@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chatbot Support Widget</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Chat Bubble (Minimized State) -->
+    <button id="chatBubble" class="chat-bubble" onclick="toggleChat()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+      </svg>
+      <span class="notification-badge">1</span>
+    </button>
+
+    <!-- Chat Widget (Expanded State) -->
+    <div id="chatWidget" class="chat-widget hidden">
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="header-info">
+          <div class="avatar">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22z"/>
+            </svg>
+          </div>
+          <div class="header-text">
+            <h3>Support Agent</h3>
+            <span class="status online">Online</span>
+          </div>
+        </div>
+        <button class="close-btn" onclick="toggleChat()">×</button>
+      </div>
+
+      <!-- Messages -->
+      <div id="chatMessages" class="chat-messages">
+        <div class="message bot">
+          <div class="message-content">
+            <p>👋 Hi! How can I help you today?</p>
+            <span class="timestamp">2:30 PM</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <button class="quick-action" onclick="sendQuickMessage('Check order status')">📦 Order Status</button>
+        <button class="quick-action" onclick="sendQuickMessage('I need help with returns')">↩️ Returns</button>
+        <button class="quick-action" onclick="sendQuickMessage('Talk to an agent')">👤 Agent</button>
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input">
+        <input type="text" id="messageInput" placeholder="Type a message..." onkeypress="handleKeyPress(event)">
+        <button class="send-btn" onclick="sendMessage()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
