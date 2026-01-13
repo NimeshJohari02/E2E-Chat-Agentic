@@ -1,9 +1,9 @@
-// Chat Widget - WebSocket Integration
-const API_BASE = 'http://localhost:3000';
-const WS_URL = 'http://localhost:3000/chat';
+// Chat Widget - Frontend Logic
+const API_BASE = 'http://localhost:8090';
+// WS support planned for V2
+// const WS_URL = 'http://localhost:8090';
 
-let socket = null;
-let conversationId = null;
+let conversationId = localStorage.getItem('chat_session_id');
 
 // Toggle chat visibility
 function toggleChat() {
@@ -22,38 +22,41 @@ function toggleChat() {
 
 // Initialize chat session
 async function initializeChat() {
-  if (!conversationId) {
-    try {
-      // Start a new conversation via REST API
-      const response = await fetch(`${API_BASE}/api/v1/chat/start`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        conversationId = data.conversationId;
-        console.log('Conversation started:', conversationId);
-        connectWebSocket();
-      }
-    } catch (error) {
-      console.error('Failed to start chat:', error);
-      addBotMessage('Sorry, I couldn\'t connect. Please try again later.');
-    }
+  if (conversationId) {
+     console.log('Restoring session:', conversationId);
+     loadHistory();
+  } else {
+    // No session yet. Will be created on first message.
+    addBotMessage('Hello! How can I help you today?');
   }
 }
 
-// Connect to WebSocket
-function connectWebSocket() {
-  if (socket) return;
+// Load conversation history
+async function loadHistory() {
+    try {
+        const response = await fetch(`${API_BASE}/api/v1/chat/session/${conversationId}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data && data.data.messages) {
+                // Clear existing messages? Or just avoid duplicates?
+                // For simplicity, we clear and re-render.
+                const container = document.getElementById('chatMessages');
+                container.innerHTML = '';
 
-  // For demo purposes, we'll use REST polling if WebSocket isn't available
-  console.log('WebSocket connection would be established here');
-
-  // Simulated welcome message for demo
-  setTimeout(() => {
-    addBotMessage('Great! I\'m connected to the support system. How can I help you today?');
-  }, 500);
+                data.data.messages.forEach(msg => {
+                    if (msg.role === 'user') addUserMessage(msg.content, msg.timestamp);
+                    else addBotMessage(msg.content, msg.timestamp);
+                });
+            }
+        } else {
+            // Session expired or invalid
+            localStorage.removeItem('chat_session_id');
+            conversationId = null;
+            addBotMessage('Hello! How can I help you today?');
+        }
+    } catch (e) {
+        console.error('Failed to load history', e);
+    }
 }
 
 // Send message
@@ -71,45 +74,59 @@ async function sendMessage() {
   showTypingIndicator();
 
   try {
-    // Send to FAQ endpoint first (L0)
-    const faqResponse = await fetch(`${API_BASE}/api/v1/faq/query`, {
+    // 1. Try FAQ (L0) - Only if no active highly contextual session?
+    // Actually, backend chat flow checks FAQ internally usually, or we can check explicitly.
+    // The requirement says "L0 -> L1".
+    // Let's try FAQ endpoint first as it's faster and cheaper.
+    const faqResponse = await fetch(`${API_BASE}/api/v1/query`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ query: message })
     });
 
     if (faqResponse.ok) {
-      const faqData = await faqResponse.json();
-      hideTypingIndicator();
-
-      if (faqData && faqData.answer) {
-        addBotMessage(faqData.answer);
-        return;
-      }
+        const faqData = await faqResponse.json();
+        if (faqData.success && faqData.data && faqData.data.answer) {
+             hideTypingIndicator();
+             addBotMessage(faqData.data.answer);
+             return; // L0 Solved it
+        }
     }
 
-    // Fallback to L1 AI Chat
-    const chatResponse = await fetch(`${API_BASE}/api/v1/chat/message`, {
+    // 2. Chat (L1) - If FAQ failed
+    const chatPayload = { message };
+    if (conversationId) chatPayload.sessionId = conversationId;
+
+    const chatResponse = await fetch(`${API_BASE}/api/v1/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        conversationId: conversationId || 'demo-session',
-        content: message
-      })
+      body: JSON.stringify(chatPayload)
     });
 
     hideTypingIndicator();
 
     if (chatResponse.ok) {
       const chatData = await chatResponse.json();
-      addBotMessage(chatData.response || 'I received your message. Let me help you with that.');
+
+      // Save session ID if new
+      if (chatData.sessionId) {
+          conversationId = chatData.sessionId;
+          localStorage.setItem('chat_session_id', conversationId);
+      }
+
+      if (chatData.message) {
+          addBotMessage(chatData.message.content);
+      } else if (chatData.tier === 'L2') {
+          // Escalation response
+          addBotMessage(chatData.message || 'Connecting you to an agent...');
+      }
     } else {
-      addBotMessage('I\'m having trouble processing your request. Would you like to speak with an agent?');
+      addBotMessage('I\'m having trouble processing your request. Please try again.');
     }
   } catch (error) {
     hideTypingIndicator();
     console.error('Error sending message:', error);
-    addBotMessage('Connection issue. Please check if the backend is running on localhost:3000');
+    addBotMessage('Connection issue. Please check if the backend is running.');
   }
 }
 
@@ -127,16 +144,16 @@ function handleKeyPress(event) {
 }
 
 // Add user message to chat
-function addUserMessage(text) {
+function addUserMessage(text, timestamp = new Date()) {
   const container = document.getElementById('chatMessages');
-  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const messageDiv = document.createElement('div');
   messageDiv.className = 'message user';
   messageDiv.innerHTML = `
     <div class="message-content">
       <p>${escapeHtml(text)}</p>
-      <span class="timestamp">${now}</span>
+      <span class="timestamp">${timeStr}</span>
     </div>
   `;
 
@@ -145,16 +162,16 @@ function addUserMessage(text) {
 }
 
 // Add bot message to chat
-function addBotMessage(text) {
+function addBotMessage(text, timestamp = new Date()) {
   const container = document.getElementById('chatMessages');
-  const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const timeStr = new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   const messageDiv = document.createElement('div');
   messageDiv.className = 'message bot';
   messageDiv.innerHTML = `
     <div class="message-content">
       <p>${escapeHtml(text)}</p>
-      <span class="timestamp">${now}</span>
+      <span class="timestamp">${timeStr}</span>
     </div>
   `;
 
@@ -195,5 +212,5 @@ function escapeHtml(text) {
 
 // Initialize on load
 document.addEventListener('DOMContentLoaded', () => {
-  console.log('Chat Widget loaded. Click the bubble to start chatting!');
+  console.log('Chat Widget loaded. API: ' + API_BASE);
 });
