@@ -818,6 +818,20 @@ Sales Agents (Olivia, Noah, Emma)
 - **Test 2**: Automated Test Suite (Unit + E2E).
 - Code is NOT "done" until it passes both.
 
+**6. Parallel Feature Development**:
+- Multiple developers MAY work on separate features in parallel.
+- Each developer MUST work on their OWN feature branch (no shared branches).
+- Feature branches should be rebased on `main` before PR submission.
+- **Isolation Rule**: Features touching the same file require coordination via Lead.
+
+**7. Two-Lead Merge Conflict Resolution**:
+- If a merge to `main` results in conflicts:
+  1. **STOP** - Do NOT resolve alone.
+  2. Request review from **TWO Lead Engineers** (Sarah, Marcus, Garrett, or Nathan).
+  3. Both Leads MUST sign off on the resolution in the PR artifact.
+  4. Document the conflict and resolution in `## Merge Conflict Resolution` section.
+- Unapproved conflict resolution is a **CRITICAL Process Violation**.
+
 ### Avery (SDET-2 - Race Conditions & Concurrency)
 **Role**: SDET-2 - QA Engineering
 **Experience**: 4 years in automated testing
