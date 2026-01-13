@@ -144,38 +144,50 @@ export class AgentService {
   }
 
   async assignNextToAgent(agentId: string): Promise<QueueEntryEntity | null> {
-    const agent = await this.findAgentById(agentId);
+    // Use a transaction to safely pick the next item without race conditions
+    return await this.queueRepo.manager.transaction(async (transactionalEntityManager) => {
+      // Re-fetch agent inside transaction with lock to ensure currentChats is fresh
+      const agent = await transactionalEntityManager.findOne(AgentEntity, {
+        where: { id: agentId },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    // Check if agent can take more chats
-    if (agent.currentChats.length >= agent.maxConcurrentChats) {
-      throw new Error('Agent has reached maximum concurrent chats');
-    }
+      if (!agent) {
+        throw new NotFoundException(`Agent with id ${agentId} not found`);
+      }
 
-    // Get next in queue
-    const nextEntry = await this.queueRepo.findOne({
-      where: { status: 'waiting' },
-      order: { priority: 'DESC', createdAt: 'ASC' },
+      // Check if agent can take more chats
+      if (agent.currentChats.length >= agent.maxConcurrentChats) {
+        throw new Error('Agent has reached maximum concurrent chats');
+      }
+
+      // Lock the row for update (skip locked rows so we don't block other agents, or just wait)
+      // pessimistic_write == SELECT ... FOR UPDATE
+      const nextEntry = await transactionalEntityManager.findOne(QueueEntryEntity, {
+        where: { status: 'waiting' },
+        order: { priority: 'DESC', createdAt: 'ASC' },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!nextEntry) {
+        return null;
+      }
+
+      // Assign to agent
+      nextEntry.status = 'assigned';
+      nextEntry.assignedAgentId = agentId;
+      nextEntry.assignedAt = new Date();
+      await transactionalEntityManager.save(nextEntry);
+
+      // Update agent's current chats
+      agent.currentChats.push(nextEntry.conversationId);
+      agent.status = 'busy';
+      agent.lastActiveAt = new Date();
+      await transactionalEntityManager.save(agent);
+
+      this.logger.log(`Conversation ${nextEntry.conversationId} assigned to agent ${agent.email}`);
+      return nextEntry;
     });
-
-    if (!nextEntry) {
-      return null;
-    }
-
-    // Assign to agent
-    nextEntry.status = 'assigned';
-    nextEntry.assignedAgentId = agentId;
-    nextEntry.assignedAt = new Date();
-    await this.queueRepo.save(nextEntry);
-
-    // Update agent's current chats
-    agent.currentChats.push(nextEntry.conversationId);
-    agent.status = 'busy';
-    agent.lastActiveAt = new Date();
-    await this.agentRepo.save(agent);
-
-    this.logger.log(`Conversation ${nextEntry.conversationId} assigned to agent ${agent.email}`);
-
-    return nextEntry;
   }
 
   // ============================================

@@ -7,7 +7,7 @@ import {
   MessageBody,
   ConnectedSocket,
 } from '@nestjs/websockets';
-import { Server, Socket } from 'socket.io';
+import { Server, Socket, Namespace } from 'socket.io';
 import { Logger, UseGuards, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { SendMessageResult } from './dto/chat.dto';
@@ -26,7 +26,7 @@ interface ChatPayload {
 })
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server: Server;
+  server: Namespace;
 
   private readonly logger = new Logger(ChatGateway.name);
 
@@ -68,7 +68,14 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private cleanupStaleConnections() {
     this.logger.log('Running stale connection cleanup...');
-    const sockets = this.server.sockets.sockets; // Map<string, Socket>
+    // In Socket.IO v4 with Namespaces, this.server is a Namespace.
+    // The 'sockets' property of a Namespace IS the Map<SocketId, Socket>.
+    const sockets = this.server.sockets;
+
+    if (!sockets) {
+      this.logger.warn('Socket map not available yet. Skipping cleanup.');
+      return;
+    }
 
     // Iterate our internal map
     for (const [socketId] of this.activeConnections) {
