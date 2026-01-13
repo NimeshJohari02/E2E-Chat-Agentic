@@ -1,6 +1,6 @@
 import { Injectable, Logger, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DataSource, EntityManager } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { AgentEntity, QueueEntryEntity } from './entities/agent.entity';
 import {
@@ -22,6 +22,7 @@ export class AgentService {
     private readonly agentRepo: Repository<AgentEntity>,
     @InjectRepository(QueueEntryEntity)
     private readonly queueRepo: Repository<QueueEntryEntity>,
+    private readonly dataSource: DataSource,
   ) {}
 
   // ============================================
@@ -143,39 +144,51 @@ export class AgentService {
     };
   }
 
+  // FIXED: Transactional assignment to prevent Race Condition (BUG-001)
   async assignNextToAgent(agentId: string): Promise<QueueEntryEntity | null> {
-    const agent = await this.findAgentById(agentId);
+    return this.dataSource.transaction(async (manager: EntityManager) => {
+      // 1. Get Agent (with lock to safely check/update chat count)
+      const agent = await manager.findOne(AgentEntity, {
+        where: { id: agentId },
+        lock: { mode: 'pessimistic_write' },
+      });
 
-    // Check if agent can take more chats
-    if (agent.currentChats.length >= agent.maxConcurrentChats) {
-      throw new Error('Agent has reached maximum concurrent chats');
-    }
+      if (!agent) {
+        throw new NotFoundException(`Agent with id ${agentId} not found`);
+      }
 
-    // Get next in queue
-    const nextEntry = await this.queueRepo.findOne({
-      where: { status: 'waiting' },
-      order: { priority: 'DESC', createdAt: 'ASC' },
+      // Check if agent can take more chats
+      if (agent.currentChats.length >= agent.maxConcurrentChats) {
+        throw new Error('Agent has reached maximum concurrent chats');
+      }
+
+      // 2. Get next in queue (with lock to ensure only ONE agent picks this)
+      const nextEntry = await manager.findOne(QueueEntryEntity, {
+        where: { status: 'waiting' },
+        order: { priority: 'DESC', createdAt: 'ASC' },
+        lock: { mode: 'pessimistic_write' },
+      });
+
+      if (!nextEntry) {
+        return null;
+      }
+
+      // 3. Assign
+      nextEntry.status = 'assigned';
+      nextEntry.assignedAgentId = agentId;
+      nextEntry.assignedAt = new Date();
+      await manager.save(nextEntry);
+
+      // 4. Update agent's list
+      agent.currentChats.push(nextEntry.conversationId);
+      agent.status = 'busy';
+      agent.lastActiveAt = new Date();
+      await manager.save(agent);
+
+      this.logger.log(`Conversation ${nextEntry.conversationId} assigned to agent ${agent.email}`);
+
+      return nextEntry;
     });
-
-    if (!nextEntry) {
-      return null;
-    }
-
-    // Assign to agent
-    nextEntry.status = 'assigned';
-    nextEntry.assignedAgentId = agentId;
-    nextEntry.assignedAt = new Date();
-    await this.queueRepo.save(nextEntry);
-
-    // Update agent's current chats
-    agent.currentChats.push(nextEntry.conversationId);
-    agent.status = 'busy';
-    agent.lastActiveAt = new Date();
-    await this.agentRepo.save(agent);
-
-    this.logger.log(`Conversation ${nextEntry.conversationId} assigned to agent ${agent.email}`);
-
-    return nextEntry;
   }
 
   // ============================================

@@ -4,6 +4,7 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 import { SanitizationPipe } from './common/pipes/sanitization.pipe';
+import { RedisIoAdapter } from './common/adapters/redis-io.adapter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -88,7 +89,6 @@ All errors follow this format:
   const redisPort = parseInt(process.env.REDIS_PORT || '6379');
 
   if (redisHost) {
-    const { RedisIoAdapter } = await import('./common/adapters/redis-io.adapter');
     const redisIoAdapter = new RedisIoAdapter(app);
     await redisIoAdapter.connectToRedis(redisHost, redisPort);
     app.useWebSocketAdapter(redisIoAdapter);
