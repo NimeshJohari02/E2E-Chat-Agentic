@@ -120,8 +120,11 @@ export class FaqService {
       const embedding = await this.embeddingsService.generateEmbedding(query);
       const embeddingString = `[${embedding.join(',')}]`;
 
+      // Set IVFFlat probes for better accuracy/speed tradeoff
+      await this.faqRepository.query('SET ivfflat.probes = 10');
+
       // Use TypeORM raw query for pgvector cosine distance
-      // operator <=> is cosine distance
+      // operator <=> is cosine distance (uses IVFFlat index if available)
       const queryBuilder = this.faqRepository.createQueryBuilder('faq')
         .select([
             'faq.id',

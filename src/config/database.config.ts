@@ -8,8 +8,15 @@ export const DatabaseConfig: TypeOrmModuleOptions = {
   password: process.env.DB_PASSWORD || 'chatbot_password',
   database: process.env.DB_DATABASE || 'chatbot_db',
 
+  // Schema for multi-tenant support
+  schema: process.env.DB_SCHEMA || 'chatbot',
+
   // Entity auto-loading
   autoLoadEntities: true,
+
+  // Migrations configuration
+  migrations: [__dirname + '/../migrations/*{.ts,.js}'],
+  migrationsRun: process.env.NODE_ENV === 'production', // Auto-run in prod
 
   // Synchronize schema in development only
   synchronize: process.env.NODE_ENV !== 'production',
