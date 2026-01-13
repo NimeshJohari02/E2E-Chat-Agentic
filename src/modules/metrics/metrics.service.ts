@@ -164,22 +164,34 @@ export class MetricsService {
     const startDate = new Date(dto.startDate);
     const endDate = new Date(dto.endDate);
 
-    // Get unique agent IDs from sessions in date range
-    const agentIds = await this.sessionRepo
+    // Optimized aggregation query to avoid N+1
+    const results = await this.sessionRepo
       .createQueryBuilder('session')
-      .select('DISTINCT session.agentId', 'agentId')
+      .leftJoinAndSelect('session.agent', 'agent')
+      .select('session.agentId', 'agentId')
+      .addSelect('agent.name', 'agentName')
+      .addSelect('COUNT(session.id)', 'totalConversations')
+      .addSelect("COUNT(CASE WHEN session.resolution = 'resolved' THEN 1 END)", 'resolvedCount')
+      .addSelect("COUNT(CASE WHEN session.resolution = 'transferred' THEN 1 END)", 'transferredCount')
+      .addSelect('AVG(session.totalHandleTime)', 'avgHandleTime')
+      .addSelect('AVG(session.firstResponseTime)', 'avgFirstResponseTime')
+      .addSelect('AVG(session.csatScore)', 'csatScore')
       .where('session.startedAt BETWEEN :startDate AND :endDate', { startDate, endDate })
+      .groupBy('session.agentId')
+      .addGroupBy('agent.name')
       .getRawMany();
 
-    const results: AgentMetricsDto[] = [];
-    for (const { agentId } of agentIds) {
-      const metrics = await this.getAgentMetrics(agentId, startDate, endDate);
-      if (metrics) {
-        results.push(metrics);
-      }
-    }
-
-    return results;
+    return results.map(row => ({
+      agentId: row.agentId,
+      agentName: row.agentName || 'Unknown Agent',
+      totalConversations: parseFloat(row.totalConversations),
+      avgHandleTime: parseFloat(row.avgHandleTime) || 0,
+      avgFirstResponseTime: parseFloat(row.avgFirstResponseTime) || 0,
+      resolvedCount: parseFloat(row.resolvedCount),
+      transferredCount: parseFloat(row.transferredCount),
+      csatScore: parseFloat(row.csatScore) || 0,
+      utilizationRate: 0, // Needs online time tracking
+    }));
   }
 
   // ============================================

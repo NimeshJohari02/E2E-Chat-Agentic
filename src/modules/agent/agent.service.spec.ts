@@ -62,6 +62,12 @@ describe('AgentService', () => {
       create: jest.fn(),
       save: jest.fn(),
       count: jest.fn(),
+      manager: {
+        transaction: jest.fn((cb) => cb({
+          findOne: mockQueueRepo.findOne,
+          save: mockQueueRepo.save,
+        })),
+      },
     };
 
     const mockQueueRepo = {
@@ -70,6 +76,25 @@ describe('AgentService', () => {
       create: jest.fn(),
       save: jest.fn(),
       count: jest.fn(),
+      manager: {
+        transaction: jest.fn(async (cb) => {
+          return cb({
+            findOne: (entity: any) => {
+              // Mock finding AgentEntity
+              if (entity === AgentEntity) {
+                return mockAgentRepo.findOne();
+              }
+              // Mock finding QueueEntryEntity
+              return mockQueueRepo.findOne();
+            },
+            save: (entity: any) => {
+               // Determine which repo to save to based on entity properties
+               if (entity.email) return mockAgentRepo.save(entity);
+               return mockQueueRepo.save(entity);
+            },
+          });
+        }),
+      },
     };
 
     const module: TestingModule = await Test.createTestingModule({
