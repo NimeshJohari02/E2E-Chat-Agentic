@@ -83,6 +83,20 @@ All errors follow this format:
     customSiteTitle: 'Chatbot API Docs',
   });
 
+  // Redis Adapter for WebSocket Scaling (PR-007)
+  const redisHost = process.env.REDIS_HOST;
+  const redisPort = parseInt(process.env.REDIS_PORT || '6379');
+
+  if (redisHost) {
+    const { RedisIoAdapter } = await import('./common/adapters/redis-io.adapter');
+    const redisIoAdapter = new RedisIoAdapter(app);
+    await redisIoAdapter.connectToRedis(redisHost, redisPort);
+    app.useWebSocketAdapter(redisIoAdapter);
+    console.log(`✅ Redis Adapter enabled for WebSockets (${redisHost}:${redisPort})`);
+  } else {
+    console.log('⚠️ Redis Host not defined, using default in-memory WebSocket adapter');
+  }
+
   const port = process.env.PORT ?? 3000;
   await app.listen(port);
 
