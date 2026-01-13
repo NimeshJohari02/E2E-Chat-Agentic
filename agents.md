@@ -781,6 +781,17 @@ Sales Agents (Olivia, Noah, Emma)
 ## QA Implementation Team (Led by Quinn)
 
 ### Strict Engineering Protocol (Mandatory)
+
+**0. Feature Branch Workflow (NON-NEGOTIABLE)**:
+- **DIRECT PUSHES TO `main` ARE BANNED**.
+- All developers MUST:
+  1. Create a feature branch: `feature/<developer-name>/<ticket-id>` (e.g., `feature/jordan/PR-008-prometheus`)
+  2. Push all commits to the feature branch ONLY.
+  3. Create a PR artifact in `docs/prs/` with full review checklist.
+  4. Request review from Lead + 1 Peer.
+  5. ONLY after Lead Approval, merge to `main` via `git merge --no-ff`.
+- Any direct push to `main` is a **CRITICAL Process Violation** requiring incident report.
+
 **1. Zero Tolerance PR Policy**:
 - **CRITICAL**: No code edit tool (`replace_file_content`, `write_to_file`) may be used WITHOUT a corresponding PR artifact in `docs/prs/` created FIRST.
 - Any direct edit without a PR number is a **Process Violation**.
