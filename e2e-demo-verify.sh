@@ -25,11 +25,11 @@ res=$(curl -s -X POST "$API_BASE/query" \
   -H "Content-Type: application/json" \
   -d '{"query":"Hello there"}')
 
-if echo "$res" | grep -q "Greeting"; then
-    echo -e "  ${GREEN}✅ PASSED: 'Hello' matches Greeting Intent${NC}"
+if echo "$res" | grep -q "Hello! I am your support assistant"; then
+    echo -e "  ${GREEN}✅ PASSED: 'Hello' matched Greeting Intent (L0 via DB)${NC}"
     PASSED=$((PASSED + 1))
 else
-    echo -e "  ${RED}❌ FAILED: Response did not contain 'Greeting'${NC}"
+    echo -e "  ${RED}❌ FAILED: Response did not contain expected answer${NC}"
     echo "  Response: $res"
     FAILED=$((FAILED + 1))
 fi

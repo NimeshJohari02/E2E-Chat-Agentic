@@ -31,19 +31,6 @@ export class FaqService {
     const { query, category } = dto;
     const normalizedQuery = query.toLowerCase().trim();
 
-    // ============================================
-    // DEMO FIX: Explicitly handle Greetings
-    // ============================================
-    if (['hello', 'hi', 'hey', 'greetings', 'start', 'test'].some(w => normalizedQuery.includes(w)) && normalizedQuery.length < 20) {
-      return {
-        id: 'demo-greeting-id',
-        question: 'Greeting',
-        answer: 'Hello! I am your support assistant. You can ask me about password reset, account issues, or billing.',
-        confidence: 1.0,
-        matchType: 'exact',
-      } as any;
-    }
-
     // Step 1: Try exact match (Fastest & Most Accurate)
     const exactMatch = await this.findExactMatch(normalizedQuery, category);
     if (exactMatch) {
