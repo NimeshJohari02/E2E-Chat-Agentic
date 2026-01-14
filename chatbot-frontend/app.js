@@ -1,5 +1,5 @@
 // Chat Widget - Frontend Logic
-const API_BASE = 'http://localhost:8090';
+const API_BASE = 'http://127.0.0.1:8090';
 // WS support planned for V2
 // const WS_URL = 'http://localhost:8090';
 
@@ -126,7 +126,7 @@ async function sendMessage() {
   } catch (error) {
     hideTypingIndicator();
     console.error('Error sending message:', error);
-    addBotMessage('Connection issue. Please check if the backend is running.');
+    addBotMessage('Connection issue: ' + error.message + '. Please check console.');
   }
 }
 

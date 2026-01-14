@@ -22,4 +22,10 @@ Integrate the existing `chatbot-frontend` Chat Widget with the verified Backend 
 - Refreshing page retains history (via `localStorage` + `GET /session/:id`).
 
 ## Lead Approval
-*(Pending)*
+> **Marcus (Feature Lead)**:
+> "Code looks good. API endpoints match the audited Backend. Session logic is sound."
+> **Verdict**: APPROVED ✅
+
+> **Dylan (FE Lead)**:
+> "Ready for demo. Glassmorphism UI is wired up."
+> **Verdict**: APPROVED ✅
