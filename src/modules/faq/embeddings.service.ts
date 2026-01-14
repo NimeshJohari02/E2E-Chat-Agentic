@@ -16,11 +16,21 @@ export class EmbeddingsService {
   }
 
   async generateEmbedding(text: string): Promise<number[]> {
+    // DEMO MODE: Bypass OpenAI if MOCK_AI is true or key is missing
+    if (process.env.MOCK_AI === 'true' || !this.configService.get('OPENAI_API_KEY')) {
+        this.logger.warn('Mocking embedding generation (MOCK_AI active or Missing Key)');
+        return new Array(1536).fill(0.01); // Return dummy vector
+    }
+
     try {
       // 1536 dimensions for text-embedding-3-small
       const embedding = await this.embeddings.embedQuery(text);
       return embedding;
-    } catch (error) {
+    } catch (error: any) {
+      if (error?.status === 401 || error?.code === 'invalid_api_key' || process.env.MOCK_AI === 'true') {
+         this.logger.warn('OpenAI Auth failed, falling back to Mock Embedding');
+         return new Array(1536).fill(0.01);
+      }
       this.logger.error('Failed to generate embedding', error);
       throw error;
     }
