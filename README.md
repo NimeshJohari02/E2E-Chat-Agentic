@@ -1,78 +1,103 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-  <h1>E2E Chat Agentic Backend</h1>
-</p>
+# E2E Chat Agentic
 
-## 📖 Source of Truth
-This repository is the backend for the E2E Chat Agentic system. This `README` serves as the central index (The "Book") for all project documentation, processes, and requirements.
+A human-directed coding-agent experiment that explored how role-based AI agents could plan, build, review, and exercise an end-to-end support-chat proof of concept.
 
-### 👥 Team & Process
-*   **[Team Roles (Who)](agents.md)** (The Team Persona Definition)
-*   **[Team Strategy (Why)](agent_config.md)** (Rationale behind the structure)
-*   **[Strict Engineering Protocol](agents.md#strict-engineering-protocol-mandatory)** (Mandatory for all Devs)
-*   **[Bug Tracking Workflow](docs/BUG-TRACKER.md)**
-*   **[Code Review Process](docs/BE-REVIEW-BACKLOG.md)**
+The project combines a NestJS backend, PostgreSQL with pgvector, Redis-oriented caching and WebSocket paths, configurable model providers, a small browser chat widget, Docker-backed local services, and a substantial set of product and engineering artifacts.
 
-### 📚 Product Requirements (PRDs)
-*   **[PRD-001: L0 Static Query Engine](docs/PRD-001-L0-Static-Query-Engine.md)** (FAQ & Embeddings)
-*   **[PRD-002: L1 AI Chatbot](docs/PRD-002-L1-AI-Chatbot.md)** (RAG & Model Routing)
-*   **[PRD-003: L2 Agent Handoff](docs/PRD-003-L2-Agent-Handoff.md)** (WebSocket & CRM)
-*   **[PRD-004: Agent Dashboard](docs/PRD-004-Agent-Efficiency-Metrics.md)** (Metrics & Analytics)
-*   **[PRD-005: Observability](docs/PRD-005-Observability.md)** (Monitoring & Logging)
+## The experiment
 
-### 🏗 Architecture & Design
-*   **[High Level Design (HLD)](docs/HLD-System-Architecture.md)**
-*   **[Low Level Design (LLD)](docs/LLD-Detailed-Design.md)**
-*   **[Frontend Architecture Contract](docs/FE-ARCHITECTURE.md)** (API Contracts for FE Team)
-*   **[Production Guide](docs/PRODUCTION-GUIDE.md)**
+`Agentic` primarily describes the development process used to create this repository. I defined the product direction and constraints, reviewed the work, and directed coding agents through role-based prompts. The agents planned slices, edited code, ran local Docker services, exercised APIs with command-line and OpenAPI/Postman tooling, reviewed one another's output, and recorded their decisions.
 
-### 📝 Change Log & PR Artifacts
-*   **[PR-001: TypeScript Standardization](docs/prs/PR-001-TypeScript-Standardization.md)**
-*   **[PR-002: WebSocket Gateway](docs/prs/PR-002-WebSocket-Gateway.md)**
-*   **[PR-003: pgvector Search](docs/prs/PR-003-pgvector-Search.md)**
-*   **[PR-004: Unit Test Coverage](docs/prs/PR-004-Test-Coverage.md)**
+Files such as [`agents.md`](agents.md), [`agent_config.md`](agent_config.md), the PRDs, review backlogs, QA reports, and documents under [`docs/prs`](docs/prs) preserve that experiment. Names such as Garrett, Nathan, Sarah, Marcus, and Quinn are simulated agent personas. Their approvals, titles, sprint records, and sign-offs are process artifacts from the experiment—not claims about a staffed engineering team or a production release.
 
----
+One later change was also implemented through Google Jules and remains visible in the repository's pull-request and commit history.
 
-## 🚀 Getting Started
+This repository is not a runtime multi-agent framework. Its agentic value is the preserved development workflow and the system those coding agents produced under human direction.
+
+## What was built
+
+- L0 FAQ routing with exact, fuzzy, and pgvector-backed semantic matching.
+- L1 chat paths with provider implementations for Ollama, OpenAI, and Anthropic.
+- L2 human-agent queue, assignment, session, and Socket.IO/WebSocket paths.
+- Agent authentication models, operational metrics, Prometheus output, and report configuration APIs.
+- PostgreSQL/pgvector and Redis services for local exploration through Docker Compose.
+- Swagger/OpenAPI documentation, a Postman collection, local seed/smoke scripts, and a static frontend chat widget.
+- PRDs, HLD/LLD documents, review records, and agent-role instructions that show how the experiment evolved.
+
+## Run the verified local flow
 
 ### Prerequisites
-*   Node.js v18+
-*   Docker & Docker Compose (for PostgreSQL + pgvector)
 
-### Installation
+- Node.js 20 or newer.
+- Docker with Docker Compose.
+- Ports `5432`, `6379`, and `8090` available.
+
+Install dependencies and start the local data services:
+
 ```bash
-$ npm install
+npm ci
+docker compose up -d --wait
 ```
 
-### Running the Environment
-1.  **Start Database (Postgres + pgvector)**
-    ```bash
-    $ docker-compose up -d
-    ```
-2.  **Run Application**
-    ```bash
-    # development
-    $ npm run start
+Start the application in local mock-AI mode:
 
-    # watch mode
-    $ npm run start:dev
-    ```
-
-### Testing
-**Strict Protocol**: All code must pass compliance with 80% coverage.
 ```bash
-# unit tests
-$ npm run test
-
-# test coverage (Must range > 80%)
-$ npm run test:cov
-
-# e2e tests
-$ npm run test:e2e
+PORT=8090 MOCK_AI=true npm run start
 ```
 
----
+In another terminal, seed the greeting FAQ and exercise the verified smoke flow:
 
-## 🛡 License
-Nest is [MIT licensed](LICENSE).
+```bash
+bash scripts/seed_data.sh
+bash e2e-demo-verify.sh
+```
+
+The smoke script checks the database-backed L0 greeting path and the mock semantic-search fallback. Swagger is available at `http://localhost:8090/api/docs`.
+
+To open the static chat widget, serve its directory on port `3001`:
+
+```bash
+cd chatbot-frontend
+python3 -m http.server 3001
+```
+
+Then open `http://localhost:3001`. The widget is configured to call the backend on port `8090`.
+
+When finished, stop the local services. `--volumes` also removes the disposable local database and Redis data:
+
+```bash
+docker compose down --volumes
+```
+
+## Current snapshot
+
+The repository is preserved as a locally exercised POC, not a deployed or production-hardened service.
+
+Verified on 16 August 2026:
+
+- `npm ci` completes.
+- `npm run build` passes.
+- The Docker-backed application starts successfully.
+- Health, database seeding, L0 greeting, and mock semantic fallback checks pass.
+- The current unit suite passes 41 of 52 tests; FAQ cache-injection and agent transaction mocks account for the remaining failures, and Jest retains open handles.
+- The E2E Jest suite currently stops at a TypeScript import-resolution error before executing tests.
+- Lint debt and dependency security advisories remain in the preserved snapshot.
+
+Authentication and authorization boundaries are incomplete: several agent, FAQ administration, metrics, and report routes are reachable without guards, and local configuration includes development fallback credentials. Use only isolated local values, never reuse the example credentials, and do not deploy this snapshot as-is.
+
+These boundaries do not erase the experiment's result: the local architecture, core data flow, API surface, Docker environment, agent-directed workflow, and working smoke path are all present and inspectable.
+
+## Documentation map
+
+- [`docs/HLD-System-Architecture.md`](docs/HLD-System-Architecture.md) — proposed system architecture.
+- [`docs/LLD-Detailed-Design.md`](docs/LLD-Detailed-Design.md) — detailed design produced during the experiment.
+- [`docs/ONBOARDING.md`](docs/ONBOARDING.md) — original onboarding artifact; some commands and status claims predate the current verification above.
+- [`docs/QA-TEST-REPORT.md`](docs/QA-TEST-REPORT.md) — historical agent-generated QA snapshot, retained as experiment evidence.
+- [`docs/PRD-001-L0-Static-Query-Engine.md`](docs/PRD-001-L0-Static-Query-Engine.md) through [`docs/PRD-005-Observability.md`](docs/PRD-005-Observability.md) — product requirement artifacts.
+- [`docs/prs`](docs/prs) — simulated PR and review records generated by the role-based workflow.
+
+The current status in this README takes precedence over historical readiness, coverage, approval, or production claims inside those preserved artifacts.
+
+## License
+
+Licensed under the [MIT License](LICENSE).
